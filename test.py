@@ -321,6 +321,7 @@ if uploaded_file:
     # Message de succès
     st.success("✅ Le fichier a été traité avec succès.")
 
+
     # Fichier final
     st.markdown(
         """
@@ -331,10 +332,14 @@ if uploaded_file:
         unsafe_allow_html=True
     )
 
+    # excel_data = convert_df_to_excel(processed_df)
+    # b64 = base64.b64encode(excel_data).decode()
+
+
     # Convertir le DataFrame en CSV et l'encoder en base64
     csv = processed_df.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()
-    
+
     st.markdown(
         """
         <style>
@@ -369,7 +374,7 @@ if uploaded_file:
     )
     # Récupérer le nom du fichier original sans l'extension
     original_filename = os.path.splitext(uploaded_file.name)[0]
-    cleaned_filename = f"Clean {original_filename}.xlsx"
+    cleaned_filename = f"Clean {original_filename}.csv"
 
 
     # Bouton de téléchargement personnalisé en HTML avec le style
