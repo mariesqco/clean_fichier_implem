@@ -331,14 +331,10 @@ if uploaded_file:
         unsafe_allow_html=True
     )
 
-    # # Convertir le DataFrame en CSV et l'encoder en base64
-    # csv = processed_df.to_csv(index=False)
-    # b64 = base64.b64encode(csv.encode()).decode()
+    # Convertir le DataFrame en CSV et l'encoder en base64
+    csv = processed_df.to_csv(index=False)
+    b64 = base64.b64encode(csv.encode()).decode()
     
-    excel_data = convert_df_to_excel(processed_df)
-    b64 = base64.b64encode(excel_data).decode()
-    
-
     st.markdown(
         """
         <style>
@@ -375,15 +371,9 @@ if uploaded_file:
     original_filename = os.path.splitext(uploaded_file.name)[0]
     cleaned_filename = f"Clean {original_filename}.xlsx"
 
-     # Bouton de téléchargement personnalisé en HTML avec le style
+
+    # Bouton de téléchargement personnalisé en HTML avec le style
     st.markdown(
-        f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{cleaned_filename}" class="download-btn">Clique ici pour télécharger le fichier nettoyé</a>',
+        f'<a href="data:file/csv;base64,{b64}" download="{cleaned_filename}" class="download-btn">Clique ici pour télécharger le fichier nettoyé</a>',
         unsafe_allow_html=True
     )
-
-
-    # # Bouton de téléchargement personnalisé en HTML avec le style
-    # st.markdown(
-    #     f'<a href="data:file/csv;base64,{b64}" download="{cleaned_filename}" class="download-btn">Clique ici pour télécharger le fichier nettoyé</a>',
-    #     unsafe_allow_html=True
-    # )
