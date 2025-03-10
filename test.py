@@ -18,6 +18,15 @@ def convert_df_to_excel(df):
     processed_data = output.getvalue()
     return processed_data
 
+# def convert_df_to_excel(df):
+#     """Convertit un DataFrame en fichier Excel binaire téléchargeable avec encodage UTF-8."""
+#     output = io.BytesIO()
+#     with pd.ExcelWriter(output, engine='openpyxl') as writer:
+#         df.to_excel(writer, index=False, sheet_name='Fichier import', encoding='utf-8')
+#     output.seek(0)
+#     return output
+
+
 
 def replace_special_chars(value):
     if pd.isna(value):
@@ -90,13 +99,22 @@ def clean_email(value):
         return value
     return value
 
+# def clean_tel(value):
+#     if value == "nan":
+#         value = ""
+#         return value
+#     elif isinstance(value, str) and value.strip():
+#         cleaned_value = re.sub(r'[ .+]', "", value)
+#         return cleaned_value
+
 def clean_tel(value):
     if value == "nan":
-        value = ""
-        return value
+        return ""
     elif isinstance(value, str) and value.strip():
         cleaned_value = re.sub(r'[ .+]', "", value)
-        return cleaned_value
+        # Ajoute systématiquement "'0" devant le numéro nettoyé
+        return "0" + cleaned_value
+    return ""
 
 def acces(value):
     if pd.isna(value):
@@ -223,12 +241,47 @@ def process_file(file):
         if col in merged_df.columns:
             merged_df[col] = merged_df[col].apply(acces)
 
-    columns_to_check = ["Assigner valideur ", "managers"]
-    for column_name in columns_to_check:
-        if column_name in merged_df.columns:
-            merged_df[column_name] = merged_df[column_name].apply(clean_emails)
+    # columns_to_check = ["Assigner valideur ", "managers"]
+    # for column_name in columns_to_check:
+    #     if column_name in merged_df.columns:
+    #         merged_df[column_name] = merged_df[column_name].apply(clean_emails)
 
-     # Transformation pour "Recevoir tout (admin)"
+
+    # Supprimer les espaces autour des noms de colonnes
+    # merged_df.columns = merged_df.columns.str.strip()
+    #
+    # # Fusionner les colonnes en les combinant si elles existent
+    # if "Assigner valideur" in merged_df.columns and "Assigner valideur " in merged_df.columns:
+    #     merged_df["Assigner valideur"] = merged_df["Assigner valideur"].fillna('') + merged_df[
+    #         "Assigner valideur "].fillna('')
+    #     merged_df["Assigner valideur"] = merged_df["Assigner valideur"].str.replace(r"\s*,\s*", ", ").str.strip()
+    #
+    #     # Supprimer l'ancienne colonne avec espace
+    #     merged_df.drop(columns=["Assigner valideur "], inplace=True)
+    #
+    # # Maintenant, on applique clean_emails sur les colonnes corrigées
+    # columns_to_check = ["Assigner valideur", "managers"]
+    # for column_name in columns_to_check:
+    #     if column_name in merged_df.columns:
+    #         merged_df[column_name] = merged_df[column_name].apply(clean_emails)
+
+    # Fusionner les colonnes "Assigner valideur", "Assigner valideur " et "managers"
+    def merge_assigner_valideur(row):
+        valeurs = []
+        for col in ["Assigner valideur", "Assigner valideur ", "managers"]:
+            if col in row and pd.notna(row[col]) and str(row[col]).strip() != "":
+                valeurs.append(str(row[col]).strip())
+        return ", ".join(valeurs)
+
+    # Appliquer la fusion sur chaque ligne
+    merged_df["Assigner valideur"] = merged_df.apply(merge_assigner_valideur, axis=1)
+
+    # Supprimer les colonnes superflues si elles existent
+    for col in ["Assigner valideur ", "managers"]:
+        if col in merged_df.columns:
+            merged_df.drop(columns=[col], inplace=True)
+
+    # Transformation pour "Recevoir tout (admin)"
     columns_to_check = ["Recevoir tout (admin)"]
     for column_name in columns_to_check:
         if column_name in merged_df.columns:
@@ -255,7 +308,7 @@ def process_file(file):
         "Peut réserver pour lui sans validation hors politique",
         "Peut valider dans la politique", "Peut valider hors politique",
         "Peut voir les offres hors politique", "Validation RSE",
-        "Assigner valideur ",
+        "Assigner valideur",
         "Recevoir les demandes de réservations des membres de l'équipe",
         "Recevoir les confirmations de réservations des membres de l'équipe",
         "Recevoir les reçus", "Recevoir les factures périodiques",
@@ -337,8 +390,11 @@ if uploaded_file:
 
 
     # Convertir le DataFrame en CSV et l'encoder en base64
-    csv = processed_df.to_csv(index=False)
-    b64 = base64.b64encode(csv.encode()).decode()
+    # csv = processed_df.to_csv(index=False)
+    # b64 = base64.b64encode(csv.encode()).decode()
+
+    excel_data = convert_df_to_excel(processed_df)
+    b64 = base64.b64encode(excel_data).decode()
 
     st.markdown(
         """
@@ -372,13 +428,21 @@ if uploaded_file:
         """,
         unsafe_allow_html=True
     )
-    # Récupérer le nom du fichier original sans l'extension
+    # # Récupérer le nom du fichier original sans l'extension
+    # original_filename = os.path.splitext(uploaded_file.name)[0]
+    # cleaned_filename = f"Clean {original_filename}.csv"
+    #
+    #
+    # # Bouton de téléchargement personnalisé en HTML avec le style
+    # st.markdown(
+    #     f'<a href="data:file/csv;base64,{b64}" download="{cleaned_filename}" class="download-btn">Clique ici pour télécharger le fichier nettoyé</a>',
+    #     unsafe_allow_html=True
+    # )
+
     original_filename = os.path.splitext(uploaded_file.name)[0]
-    cleaned_filename = f"Clean {original_filename}.csv"
+    cleaned_filename = f"Clean {original_filename}.xlsx"
 
-
-    # Bouton de téléchargement personnalisé en HTML avec le style
     st.markdown(
-        f'<a href="data:file/csv;base64,{b64}" download="{cleaned_filename}" class="download-btn">Clique ici pour télécharger le fichier nettoyé</a>',
+        f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{cleaned_filename}" class="download-btn">Clique ici pour télécharger le fichier nettoyé</a>',
         unsafe_allow_html=True
     )
