@@ -70,7 +70,7 @@ def role(value):
     elif isinstance(value, str) and re.search(r'voyage|traveler', value, re.IGNORECASE):
         return "traveler"
     if pd.isna(value):
-        return "Vide"
+        return "VIDE"
     return value
 
 def langue(value):
@@ -94,7 +94,7 @@ def date_de_naissance(value):
 
 def clean_email(value):
     if pd.isna(value):
-        return "Vide"
+        return "VIDE"
     if isinstance(value, str) and re.search(r'[ ,;/\']', value):
         return value
     return value
@@ -113,7 +113,7 @@ def clean_tel(value):
     elif isinstance(value, str) and value.strip():
         cleaned_value = re.sub(r'[ .+]', "", value)
         # Ajoute systématiquement "'0" devant le numéro nettoyé
-        return "0" + cleaned_value
+        return "'00" + cleaned_value
     return ""
 
 def acces(value):
@@ -228,7 +228,7 @@ def process_file(file):
 
     # Transformation pour les colonnes d'accès
     columns_to_process = [
-        "Sans accès", "Peut réserver pour lui sans validation dans la politique",
+        "SSO","Sans accès", "Peut réserver pour lui sans validation dans la politique",
         "Peut réserver pour les autres sans validation",
         "Peut réserver pour lui sans validation hors politique",
         "Peut valider dans la politique", "Peut valider hors politique",
@@ -302,7 +302,7 @@ def process_file(file):
     desired_order = [
         "ID", "Centre de coût principal", "Centre de coût secondaire / service",
         "Politique de voyage", "Genre", "Prénom", "Nom de famille", "Rôle", "Langue",
-        "Date de naissance", "Email", "TEL", "Désactivé", "Sans accès",
+        "Date de naissance", "SSO", "Email", "TEL", "Désactivé", "Sans accès",
         "Peut réserver pour lui sans validation dans la politique",
         "Peut réserver pour les autres sans validation",
         "Peut réserver pour lui sans validation hors politique",
@@ -316,6 +316,9 @@ def process_file(file):
         "Nom du champ perso 2 (lié au profil du voyageur)"
     ]
     merged_df = merged_df.reindex(columns=[col for col in desired_order if col in merged_df.columns])
+
+    if "Désactivé" in merged_df.columns:
+        merged_df["Désactivé"] = "false"
 
     return merged_df
 
