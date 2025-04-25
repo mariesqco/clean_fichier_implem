@@ -9,6 +9,8 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font
 import tempfile
 
+#### C'est bien le test à prendre en compte #######
+
 
 def convert_df_to_excel(df):
     """Convertit un DataFrame en fichier Excel binaire téléchargeable."""
@@ -214,6 +216,10 @@ def process_file(file):
         if column_name in merged_df.columns:
             merged_df[column_name] = merged_df[column_name].apply(date_de_naissance)
 
+    # Traitement spécifique pour la colonne "SSO"
+    if "SSO" in merged_df.columns:
+        merged_df["SSO"] = merged_df["SSO"].apply(acces)
+
     # Transformation pour "Email"
     columns_to_check = ["Email", "email"]
     for column_name in columns_to_check:
@@ -226,20 +232,45 @@ def process_file(file):
         if column_name in merged_df.columns:
             merged_df[column_name] = merged_df[column_name].astype(str).apply(clean_tel)
 
-    # Transformation pour les colonnes d'accès
+    # Liste des colonnes d’accès à transformer
     columns_to_process = [
-        "SSO","Sans accès", "Peut réserver pour lui sans validation dans la politique",
+        "Sans accès", "Peut réserver pour lui sans validation dans la politique",
         "Peut réserver pour les autres sans validation",
         "Peut réserver pour lui sans validation hors politique",
         "Peut valider dans la politique", "Peut valider hors politique",
         "Peut voir les offres hors politique", "Validation RSE",
         "Recevoir les demandes de réservations des membres de l'équipe",
         "Recevoir les confirmations de réservations des membres de l'équipe",
-        "Recevoir les reçus", "Recevoir les factures périodiques"
-            ]
+        "Recevoir les reçus", "Recevoir les factures périodiques",
+        "Recevoir toutes les confirmations de voyage",
+        "Recevoir toutes les demandes d'approbations"
+    ]
+
+    # Ajouter "SSO" à la liste des colonnes à transformer si elle existe
+    if "SSO" in merged_df.columns:
+        columns_to_process.insert(0, "SSO")
+
+    # Appliquer la fonction d’accès uniquement aux colonnes présentes
     for col in columns_to_process:
         if col in merged_df.columns:
             merged_df[col] = merged_df[col].apply(acces)
+
+    # # Transformation pour les colonnes d'accès
+    # columns_to_process = [
+    #     "SSO","Sans accès", "Peut réserver pour lui sans validation dans la politique",
+    #     "Peut réserver pour les autres sans validation",
+    #     "Peut réserver pour lui sans validation hors politique",
+    #     "Peut valider dans la politique", "Peut valider hors politique",
+    #     "Peut voir les offres hors politique", "Validation RSE",
+    #     "Recevoir les demandes de réservations des membres de l'équipe",
+    #     "Recevoir les confirmations de réservations des membres de l'équipe",
+    #     "Recevoir les reçus", "Recevoir les factures périodiques",
+    #     "Recevoir toutes les confirmations de voyage",
+    #     "Recevoir toutes les demandes d'approbations"
+    #         ]
+    # for col in columns_to_process:
+    #     if col in merged_df.columns:
+    #         merged_df[col] = merged_df[col].apply(acces)
 
     # columns_to_check = ["Assigner valideur ", "managers"]
     # for column_name in columns_to_check:
@@ -281,11 +312,15 @@ def process_file(file):
         if col in merged_df.columns:
             merged_df.drop(columns=[col], inplace=True)
 
-    # Transformation pour "Recevoir tout (admin)"
-    columns_to_check = ["Recevoir tout (admin)"]
-    for column_name in columns_to_check:
-        if column_name in merged_df.columns:
-            merged_df[column_name] = merged_df[column_name].apply(clear_column_if_not_empty)
+    # columns_to_check = ["Recevoir toutes les demandes d'approbations"]
+    # for column_name in columns_to_check:
+    #     if column_name in merged_df.columns:
+    #         merged_df[column_name] = merged_df[column_name].apply(clear_column_if_not_empty)
+    #
+    # columns_to_check = ["Recevoir toutes les confirmations de voyage"]
+    # for column_name in columns_to_check:
+    #     if column_name in merged_df.columns:
+    #         merged_df[column_name] = merged_df[column_name].apply(clear_column_if_not_empty)
 
     # Formatage en texte pour toutes les colonnes d'accès
     for col in columns_to_process:
@@ -298,11 +333,11 @@ def process_file(file):
     if "ID" in merged_df.columns:
         merged_df = merged_df[merged_df["ID"] != "Ne Pas Remplir Cette Case"]
 
-    # Réorganiser les colonnes selon l'ordre souhaité
+    # Vérification de la présence de la colonne "SSO" avant de l’ajouter dans l’ordre d’affichage
     desired_order = [
         "ID", "Centre de coût principal", "Centre de coût secondaire / service",
         "Politique de voyage", "Genre", "Prénom", "Nom de famille", "Rôle", "Langue",
-        "Date de naissance", "SSO", "Email", "TEL", "Désactivé", "Sans accès",
+        "Date de naissance", "Email", "TEL", "Désactivé", "Sans accès",
         "Peut réserver pour lui sans validation dans la politique",
         "Peut réserver pour les autres sans validation",
         "Peut réserver pour lui sans validation hors politique",
@@ -312,10 +347,40 @@ def process_file(file):
         "Recevoir les demandes de réservations des membres de l'équipe",
         "Recevoir les confirmations de réservations des membres de l'équipe",
         "Recevoir les reçus", "Recevoir les factures périodiques",
-        "Recevoir tout (admin)", "Nom du champ perso 1 (lié au profil du voyageur)",
-        "Nom du champ perso 2 (lié au profil du voyageur)"
+        "Recevoir toutes les demandes d'approbations", "Recevoir toutes les confirmations de voyage",
+        "Nom du champ perso 1 (lié au profil du voyageur)",
+        "Nom du champ perso 2 (lié au profil du voyageur)",
+        "Nom du champ perso 3 (lié au profil du voyageur)",
+        "Nom du champ perso 4 (lié au profil du voyageur)",
+        "Nom du champ perso 5 (lié au profil du voyageur)"
     ]
+
+    # Si "SSO" est dans les colonnes, on l’ajoute à la bonne place (juste avant "Email")
+    if "SSO" in merged_df.columns:
+        desired_order.insert(desired_order.index("Email"), "SSO")
+
+    # Réorganiser les colonnes sans erreur si certaines sont absentes
     merged_df = merged_df.reindex(columns=[col for col in desired_order if col in merged_df.columns])
+
+    # # Réorganiser les colonnes selon l'ordre souhaité
+    # desired_order = [
+    #     "ID", "Centre de coût principal", "Centre de coût secondaire / service",
+    #     "Politique de voyage", "Genre", "Prénom", "Nom de famille", "Rôle", "Langue",
+    #     "Date de naissance", "SSO", "Email", "TEL", "Désactivé", "Sans accès",
+    #     "Peut réserver pour lui sans validation dans la politique",
+    #     "Peut réserver pour les autres sans validation",
+    #     "Peut réserver pour lui sans validation hors politique",
+    #     "Peut valider dans la politique", "Peut valider hors politique",
+    #     "Peut voir les offres hors politique", "Validation RSE",
+    #     "Assigner valideur",
+    #     "Recevoir les demandes de réservations des membres de l'équipe",
+    #     "Recevoir les confirmations de réservations des membres de l'équipe",
+    #     "Recevoir les reçus", "Recevoir les factures périodiques",
+    #     "Recevoir toutes les demandes d'approbations", "Recevoir toutes les confirmations de voyage", "Nom du champ perso 1 (lié au profil du voyageur)",
+    #     "Nom du champ perso 2 (lié au profil du voyageur)", "Nom du champ perso 3 (lié au profil du voyageur)",
+    #     "Nom du champ perso 4 (lié au profil du voyageur)", "Nom du champ perso 5 (lié au profil du voyageur)"
+    # ]
+    # merged_df = merged_df.reindex(columns=[col for col in desired_order if col in merged_df.columns])
 
     if "Désactivé" in merged_df.columns:
         merged_df["Désactivé"] = "false"
